@@ -1,0 +1,13 @@
+{
+    "route":{
+        "id":1,
+        "name":"Test Route",
+        "discription":"Beautifull route blablabla it's so amazing!",
+        "rating":4,
+        "points":[
+            {"id":"234", "name":"Point Nr. 234", "longitude":"51.464810","latitude":"3.833301", "hint":"This is a hint"}, 
+            {"id":"067", "name":"Point Nr. 067", "longitude":"60.180624","latitude":"24.924525", "hint":"This is a hint"}, 
+            {"id":"592", "name":"Point Nr. 592", "longitude":"-22.956813","latitude":"-43.235779", "hint":"This is a hint"} 
+        ]
+    }
+}
