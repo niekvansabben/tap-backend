@@ -4,7 +4,7 @@ var url = require('url');
 var fs = require('fs');
 
 
-var debug = true;
+var debug = false;
 
 var con = mysql.createConnection({
     host: "localhost",
@@ -38,7 +38,11 @@ http.createServer(function (req, res) {
 
   if(q.pathname == "/") {
     res.writeHead(200, {'Content-Type': 'text/html'});
-    res.write("<ul><li>/routes</li><li>/route?id=1</li><li>/static_json or /read_data</li></ul>");
+    res.write("<ul><li>/routes</li>");
+    res.write("<ul><li>?sort=rating</li>");
+    res.write("<li>?sort=timestamp</li></ul>");
+    res.write("<li>/route?id=1</li>");
+    res.write("<li>/static_json or /read_data</li></ul>");
     res.end();
   } 
     
@@ -46,13 +50,36 @@ http.createServer(function (req, res) {
     else if (q.pathname == "/routes") {
         
         res.writeHead(200, {'Content-Type': 'application/json'});
-        con.query("SELECT * FROM routes;", function (err, result) {
+        
+        if (q.query.sort == "rating") {
+            var sql = "SELECT routes.id, name, description, duration_time, duration_distance, avg(ratings.rating) as avg_rating FROM routes JOIN ratings ON routes.id = ratings.route_id GROUP BY routes.id ORDER BY avg_rating DESC;";
+            con.query(sql, function (err, result) {
             
-            if (err) throw err;
-            res.end(JSON.stringify(result));    
-            console.log(result);
+                if (err) throw err;
+                res.end(JSON.stringify(result));    
+                console.log(result);
+
+            });
+        } else if (q.query.sort == "timestamp") {
+            var sql = "SELECT * FROM routes ORDER BY timestamp DESC;";
+            con.query(sql, function (err, result) {
             
-        });
+                if (err) throw err;
+                res.end(JSON.stringify(result));    
+                console.log(result);
+
+            });
+        } else {
+            con.query("SELECT * FROM routes;", function (err, result) {
+            
+                if (err) throw err;
+                res.end(JSON.stringify(result));    
+                console.log(result);
+
+            })
+        };
+        
+        
   } 
     
     else if (q.pathname == "/route") {
@@ -100,7 +127,7 @@ http.createServer(function (req, res) {
         } else {
             
             res.writeHead(200, {'Content-Type': 'text/html'});
-            res.end("<h1>No input given</h1>");    
+            res.end("<h2>No input given</h2>");    
             console.log("No input given");
         }
   } 
