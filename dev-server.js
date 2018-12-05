@@ -15,38 +15,38 @@ var con = mysql.createConnection({
 });
 
 con.connect(function(err) {
-  if (err) {
-    console.error('error connecting: ' + err.stack);
-    return;
-  }
+    if (err) {
+        console.error('error connecting: ' + err.stack);
+        return;
+    }
 
-  console.log('connected as id ' + con.threadId);
+    console.log('connected as id ' + con.threadId);
 });
 
 http.createServer(function (req, res) {
-  var q = url.parse(req.url, true);
+    var q = url.parse(req.url, true);
 
-  if (debug) {
-    console.log("");
-    console.log("url: \t\t" + q.path);
-    console.log("pathname: \t" + q.pathname); //returns '/default.htm'
-    console.log("search: \t" + q.search); //returns '?year=2017&month=february'
-    console.log("search object: \t" + JSON.stringify(q.query)); //returns an object: { year: 2017, month: 'february' }
-    //console.log(q.query.month); //returns 'february'
-    console.log("");
-  }
+    if (debug) {
+        console.log("");
+        console.log("url: \t\t" + q.path);
+        console.log("pathname: \t" + q.pathname); //returns '/default.htm'
+        console.log("search: \t" + q.search); //returns '?year=2017&month=february'
+        console.log("search object: \t" + JSON.stringify(q.query)); //returns an object: { year: 2017, month: 'february' }
+        //console.log(q.query.month); //returns 'february'
+        console.log("");
+    }
 
-  if(q.pathname == "/") {
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.write("<ul><li>/routes</li>");
-    res.write("<ul><li>sort=rating/timestamp</li>");
-    res.write("<li>sort=</li>");
-    res.write("<li>time=n (Min)</li>");
-    res.write("<li>distance=m (KM)</li></ul>");
-    res.write("<li>/route?id=1</li>");
-    res.write("<li>/static_json or /read_data</li></ul>");
-    res.end();
-  } 
+    if(q.pathname == "/") {
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        res.write("<ul><li>/routes</li>");
+        res.write("<ul><li>sort=rating/timestamp</li>");
+        res.write("<li>time=60 (Min)</li>");
+        res.write("<li>distance=5 (KM)</li></ul>");
+        res.write("<li>/route?id=1</li>");
+        res.write("<li>/rate?route_id=7&user_id=6&rating=5</li>");
+        res.write("<li>/static_json or /read_data</li></ul>");
+        res.end();
+    } 
     
     
     else if (q.pathname == "/routes") {
@@ -91,7 +91,7 @@ http.createServer(function (req, res) {
                 res.end(JSON.stringify(result));    
                 console.log(result);
 
-            })
+        })
         
         
   } 
@@ -153,6 +153,28 @@ http.createServer(function (req, res) {
         res.end();
       });
   } 
+    
+    else if (q.pathname == "/rate") {
+        
+        if(q.query.route_id != null && q.query.user_id != null && q.query.rating != null){
+            
+            var sql = "INSERT INTO ratings (route_id, user_id, rating) VALUES (?, ?, ?)";
+
+            con.query(sql, [q.query.route_id, q.query.user_id, q.query.rating], function (err, result) {
+                
+                if (err) throw err;
+                res.end(JSON.stringify(result));    
+                console.log(result);
+
+            })
+            
+            
+        } else {
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.end("<h2>No input given</h2>");    
+            console.log("No input given");
+        }
+    }
     
     else {
     res.writeHead(404, {'Content-Type': 'text/html'});
