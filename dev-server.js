@@ -4,10 +4,10 @@ var url = require('url');
 var fs = require('fs');
 
 
-var debug = false;
+var debug = true;
 
 var con = mysql.createConnection({
-    host: "localhost",
+    host: "206.189.106.84",
     user: "root",
     password: "R00t",
     database: "tap"
@@ -39,8 +39,10 @@ http.createServer(function (req, res) {
   if(q.pathname == "/") {
     res.writeHead(200, {'Content-Type': 'text/html'});
     res.write("<ul><li>/routes</li>");
-    res.write("<ul><li>?sort=rating</li>");
-    res.write("<li>?sort=timestamp</li></ul>");
+    res.write("<ul><li>sort=rating/timestamp</li>");
+    res.write("<li>sort=</li>");
+    res.write("<li>time=n (Min)</li>");
+    res.write("<li>distance=m (KM)</li></ul>");
     res.write("<li>/route?id=1</li>");
     res.write("<li>/static_json or /read_data</li></ul>");
     res.end();
@@ -51,33 +53,45 @@ http.createServer(function (req, res) {
         
         res.writeHead(200, {'Content-Type': 'application/json'});
         
+        var sql = "SELECT * FROM (SELECT routes.id, name, description, duration_time, duration_distance, avg(ratings.rating) as avg_rating FROM routes JOIN ratings ON routes.id = ratings.route_id GROUP BY routes.id ) as temp";
+        var sql_values = [];
+        
+        if(q.query.time != null) {
+            
+            sql = sql + " WHERE duration_time <= ?";
+            sql_values.push(q.query.time);
+            
+            if(q.query.distance != null) {
+                sql = sql + " AND duration_distance <= ?";
+                sql_values.push(q.query.distance);
+            }
+        } else if(q.query.distance != null) {
+            sql = sql + " WHERE duration_distance <= ?";
+            sql_values.push(q.query.distance);
+        }
+        
+        
         if (q.query.sort == "rating") {
-            var sql = "SELECT routes.id, name, description, duration_time, duration_distance, avg(ratings.rating) as avg_rating FROM routes JOIN ratings ON routes.id = ratings.route_id GROUP BY routes.id ORDER BY avg_rating DESC;";
-            con.query(sql, function (err, result) {
             
-                if (err) throw err;
-                res.end(JSON.stringify(result));    
-                console.log(result);
+            sql = sql + " ORDER BY avg_rating DESC;";
 
-            });
         } else if (q.query.sort == "timestamp") {
-            var sql = "SELECT * FROM routes ORDER BY timestamp DESC;";
-            con.query(sql, function (err, result) {
             
-                if (err) throw err;
-                res.end(JSON.stringify(result));    
-                console.log(result);
-
-            });
+            sql = sql + " ORDER BY timestamp DESC;";
+            
         } else {
-            con.query("SELECT * FROM routes;", function (err, result) {
+            sql = sql + ";";
+        };
+        
+        console.log(sql);
+        console.log(sql_values);
+        con.query(sql, sql_values, function (err, result) {
             
                 if (err) throw err;
                 res.end(JSON.stringify(result));    
                 console.log(result);
 
             })
-        };
         
         
   } 
