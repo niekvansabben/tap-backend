@@ -3,29 +3,33 @@ var http = require('http');
 var url = require('url');
 var fs = require('fs');
 
-
 var debug = false;
 
+
+/****Prepair the mysql connection****/
 var con = mysql.createConnection({
-    host: "localhost",
+    host: "206.189.106.84",
     user: "root",
     password: "R00t",
     database: "tap"
     
 });
 
+/****Make the mysql connection****/
 con.connect(function(err) {
-  if (err) {
-    console.error('error connecting: ' + err.stack);
-    return;
-  }
+    if (err) {
+        console.error('error connecting: ' + err.stack);
+        return;
+    }
 
-  console.log('connected as id ' + con.threadId);
+    console.log('connected as id ' + con.threadId);
 });
 
+/****Create a http server listening on port 2121****/
 http.createServer(function (req, res) {
     var q = url.parse(req.url, true);
 
+    /****Print debuging information****/
     if (debug) {
         console.log("");
         console.log("url: \t\t" + q.path);
@@ -36,6 +40,7 @@ http.createServer(function (req, res) {
         console.log("");
     }
 
+    /****Print accesatertermtttttble paths and paramethers****/
     if(q.pathname == "/") {
         res.writeHead(200, {'Content-Type': 'text/html'});
         res.write("<ul><li>/routes</li>");
@@ -43,12 +48,13 @@ http.createServer(function (req, res) {
         res.write("<li>time=60 (Min)</li>");
         res.write("<li>distance=5 (KM)</li></ul>");
         res.write("<li>/route?id=1</li>");
-        res.write("<li>/rate?route_id=7&user_id=6&rating=5</li>");
-        res.write("<li>/static_json or /read_data</li></ul>");
+        res.write("<li>/rate?route_id=7&user_id=6&rating=5</li></ul>");
         res.end();
     } 
     
-    
+    /****Respond with a route list****/
+    /****sorted by rating/timestamp and 
+    maybe limmeted by distance and time****/
     else if (q.pathname == "/routes") {
         
         res.writeHead(200, {'Content-Type': 'application/json'});
@@ -83,19 +89,25 @@ http.createServer(function (req, res) {
             sql = sql + ";";
         };
         
-        console.log(sql);
-        console.log(sql_values);
+        if(debug){
+            console.log(sql);
+            console.log(sql_values);
+        }
         con.query(sql, sql_values, function (err, result) {
             
                 if (err) throw err;
-                res.end(JSON.stringify(result));    
-                console.log(result);
+                res.end(JSON.stringify(result)); 
+                if(debug){
+                    console.log(result);
+                }
 
         })
         
         
   } 
     
+    /****Respond with one route****/
+    /****All route information and route points****/
     else if (q.pathname == "/route") {
         
         if (q.query.id != null && Number.isInteger(Number(q.query.id))) {
@@ -146,14 +158,7 @@ http.createServer(function (req, res) {
         }
   } 
     
-    else if (q.pathname == "/read_data" || q.pathname == "/static_json") {
-      fs.readFile('data.json', function(err, data) {
-        res.writeHead(200, {'Content-Type': 'text/html'});
-        res.write(data);
-        res.end();
-      });
-  } 
-    
+    /****Pushing a rating to the sytem****/
     else if (q.pathname == "/rate") {
         
         if(q.query.route_id != null && q.query.user_id != null && q.query.rating != null){
@@ -163,8 +168,10 @@ http.createServer(function (req, res) {
             con.query(sql, [q.query.route_id, q.query.user_id, q.query.rating], function (err, result) {
                 
                 if (err) throw err;
-                res.end(JSON.stringify(result));    
-                console.log(result);
+                res.end(JSON.stringify(result));  
+                if(debug){
+                    console.log(result); 
+                }
 
             })
             
@@ -176,6 +183,7 @@ http.createServer(function (req, res) {
         }
     }
     
+    /****If path is not correct throw a 404 error****/
     else {
     res.writeHead(404, {'Content-Type': 'text/html'});
     res.write("404 Not Found");
